@@ -1,0 +1,9 @@
+Okko_Airbnb_Test_Assignment:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: cosmic-gizmo-269713
+      dataset: airbnb
+      threads: 1

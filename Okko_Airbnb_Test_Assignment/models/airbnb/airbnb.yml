@@ -1,0 +1,27 @@
+sources:
+  - name: airbnb
+    description: sample airbnb data
+    database: cosmic-gizmo-269713
+    schema: airbnb
+    tables:
+      - name: reviews
+        description: scrape of reviews data
+      - name: listings_20240614
+        description: scrape of listings data from 14/06/2024
+      - name: listings_20240906
+        description: scrape of listings data from 06/09/2024
+
+models:
+  - name: listings
+    description: "combines the two scrapes of listings data to a single unified view"
+  - name: inactive_listings
+    description: "calculates the number of inactive listings"
+  - name: amenities
+    description: "unnests amenities from the listings table and creates one record per amenity"
+    config:
+      materialized: table
+  - name: average_review_length
+    description: "calculates the average review length for all the second reviews of reviewers who have made at least 4 reviews"
+  - name: review_count_by_type
+    description: "calculates the review count by type for reviews on or after 1st August 2024"
+  
