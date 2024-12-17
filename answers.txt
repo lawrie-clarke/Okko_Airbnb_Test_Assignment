@@ -1,0 +1,16 @@
+Answers for worksheet questions
+
+3) How many listings are inactive as of the latest scrape due to being removed?
+    - 615 listings
+
+5) What is the average review length of the 2nd review of each reviewer who has completed at least 4 reviews?
+    - 213.93
+
+6) Only considering reviews dated on or after 1st August 2024, which type of listings had more reviews?
+    - listings with hair dryers
+        - 5799 reviews
+    - listings with washers
+        - 652 reviews
+    - listings with both hair dryers and washers
+        - 1764 reviews
+    - Listings with Hairdryers therefore had more reviews
