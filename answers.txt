@@ -1,10 +1,51 @@
 Answers for worksheet questions
+1) Import the given data into a database technology of your choice using any preferred method.
+    - If tasked with automating monthly data updates, how would you retain historical 
+      changes while addressing new data availability?
+        - The monthly data updates themselves can be scheduled to run in production from any orchestration tool. 
+          For retaining historical changes:
+        - If we just need a monthly historic view of what the data and downstream analysis looked like at that 
+          point in time I would likely ‘snapshot’ the source data and maintain 2-3 frozen historical versions 
+          (archive more if required). This has a storage cost associated with it but is probably the most 
+          straightforward way to do this. This is probably best managed outside dbt directly on the source data.
+        - If data is more mutable and you want to be able to query this mutability (eg how a listing status 
+          changes over time) then I would likely leverage dbt’s snapshot feature to essentially capture all 
+          changes to a record. This can be done at any model stage but if extensive analysis required then 
+          likely best to keep upstream and do this on the source table. This will create a copy of the table 
+          that is slightly wider by adding some change data capture fields and much longer by recording each 
+          insert/update/delete as a new record. This can then be queried accordingly in downstream models. 
+          In this particular instance, this is likely the best solution.
+        - If we don’t want to reprocess historic data we can also use incremental models which essentially only 
+          process new or updated data. This wouldn’t allow you to query old states of the data but would be more 
+          efficient for processing (although more complex to manage) with data that does change over time.
+    - Outline your approach for managing schema changes in source tables.
+        - In general (and assuming this is within your control) schema changes should be notified ahead of time. This 
+          is partly a communication issue/solution eg ensuring any upstream data providers either internal or external 
+          are aware of this ‘contract’. SLAs can help if using external data. This is not always possible for external 
+          data however.
+        - Also worth noting that for field additions or fields removals/updates that are not used in models, it is 
+          entirely possible to simply ignore changes (although it is better to be aware)
+        - To help manage this for all sources though, schemas can themselves be versioned eg you concurrently have the 
+          old version and the new version. Production continues to run off the old version until the necessary updates 
+          to your dbt pipeline are made in development and can be pushed to production.
+        - To help detect schema changes, tests can be added to sources/staging. Packages already exist that have built 
+          these tests so can leverage these rather than rewriting.
+        - Alerts for failed runs can also be set as a last ‘catch’ but this is generally undesirable.
+    - Briefly describe steps you would take to address data quality issues arising from
+      monthly updates.
+        - If a model were to fail in production, you would need to look in to the logs to understand why it has failed. 
+          Alerts can be set up to inform you of the reason for failures as well. 
+        - If models haven’t failed but a user of the data thinks the data is wrong then tracking the data lineage of the 
+          data item in the DAG can be useful to see if and where the logic error might have crept in.
+        - As a protective measure, tests should be set up to validate that all code/logic that gets submitted keeps the 
+          models working as expected. In this specific example, you may want to test assertions around CDC fields for 
+          example to ensure that the monthly updates themselves work as intended.
 
 3) How many listings are inactive as of the latest scrape due to being removed?
     - 615 listings
 
 5) What is the average review length of the 2nd review of each reviewer who has completed at least 4 reviews?
-    - 213.93
+    - 213.93 characters
 
 6) Only considering reviews dated on or after 1st August 2024, which type of listings had more reviews?
     - listings with hair dryers
@@ -14,3 +55,87 @@ Answers for worksheet questions
     - listings with both hair dryers and washers
         - 1764 reviews
     - Listings with Hairdryers therefore had more reviews
+
+7) Your agency is pressing ahead with investing in 10 short-term rental properties. You have been asked to create a 
+   dashboard for the management team to assess weekly performance of the properties.
+    - How would you go about capturing requirements for this dashboard?
+        - I would first make sure I had discussed with all relevant stakeholders. In this instance, particularly the 
+          management team who will be leveraging the dashboard for decision making. It may also be worth discussing 
+          with upstream stakeholders like data owners to understand what data you have available to you. In previous 
+          discovery sessions I have run, I’ve often leveraged a rubrik to structure the conversation somewhat. I also 
+          find it can be useful to speak on an individual basis if time allows, as requirements for different people 
+          can differ and it’s important to capture all (and of course prioritise).
+        - This is not an exhaustive list but some indicative questions I would seek to address:
+            - Purpose
+                - What is the problem you want to solve?
+                - What decisions do you want to support?
+                - How critical is this analysis to the company's objectives?
+            - Audience
+                - Who are the intended audience?
+                - How skilled are the audience?
+            - Metrics
+                - What metrics are you interested in visualising?
+                - What dimensional breakdowns might be useful within that?
+                - What time frame should the metrics cover?
+                - Do you expect summary level or deep-dive metrics?
+            - Process
+                - What if at all is the current mechanism you get this data by or make this decision?
+                - How frequently do you expect to leverage the dashboard?
+                - Is it important to be able to self-serve and navigate to areas of interest within the dashboard?
+            - Delivery
+                - What is your expected delivery timeframe?
+    - Sketch out what an MVP dashboard might look like
+        - Comparison view of all rental properties performance (with time frame selection eg previous week, month, 
+          year, all time)
+            - Gross yield by property (bar chart)
+            - Net yield by property (bar chart)
+            - Total rental income by property (bar chart)
+            - Average daily revenue by property (bar chart)
+            - Occupancy rate by property (bar chart)
+            - Price per night by property (bar chart)
+            - Total expense costs by property (bar chart)
+            - Average review score by property (bar chart)
+            - Average length of stay by property (bar chart)
+            - Predicted property value (bar chart)
+        - Monitoring view of all properties performance (time series)
+            - Total rental income all properties by month (line chart)
+            - Average daily revenue all properties by month (line chart)
+            - Occupancy rate all properties by month (line chart)
+            - Total expense costs all properties by month (line chart)
+            - Average review score all properties by month (line chart)
+            - Average length of stay all properties by month (line chart)
+            - Total predicted portfolio value (line chart)
+        - Individual properties monitoring view with dropdown for selecting each (time series). May be useful to 
+          have a benchmark line for similar properties to help spot underperformance.
+            - Gross yield (value)
+            - Net yield (value)
+            - Total rental income by month (line chart)
+            - Average daily revenue by month (line chart)
+            - Occupancy rate by month (line chart)
+            - Price per night by month (line chart)
+            - Total expense costs by month (line chart)
+                - Broken down by type
+            - Average review score by month (line chart)
+            - Average length of stay by month (line chart)
+            - Predicted property value (line chart)
+    - What type of extra data might you suggest gaining access to, in order to provide extra context for 
+      performance of the properties?
+        - Given the performance of a rental property is very simplistically a financial equation of 
+          income - expenditure, any data that provides context to this may be useful.
+        - Income can likely be determined from airbnb data alone. Expenditure data may not be covered by this though. 
+          Additional data that could be useful:
+            - Operating costs data - eg exports for accounting software to track upkeep costs
+            - Utilities data - eg gas/electricity data exports depending on the model of rental this is likely paid 
+              for by the owner so will be useful to track (could also use accounts)
+            - Mortgage data (if applicable) - eg from bank or mortgage statements or accounting software
+        - Additionally you may want to track the performance of the value of the property in which case scrapes of 
+          data from eg rightmove could be helpful.
+    - How would you look to blend this data with the existing data you have access to?
+        - For expense data, you would need to match against the rental property to be able to understand the relative 
+          performance of each property. To achieve this invoices/utilities/mortgage data etc should ideally have an 
+          identifier added to them so that they can be linked for querying.
+
+
+
+
+
